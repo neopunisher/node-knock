@@ -8,9 +8,6 @@
     "util",
     "utility"
   ],
- "scripts": {
-    "knock": "./knock.js"
-  },
   "author": {  "name": "Carter Cole",  "email": "node@cartercole.com" },
   "maintainers": [{ "name": "Carter Cole", "email": "node@cartercole.com" }],
   "homepage": "http://blog.cartercole.com",
@@ -26,6 +23,7 @@
     "request": "*",
     "tldtools": "*",
     "optimist": "*",
-    "glob" : "*"
+    "glob" : "*",
+    "step" : "*"
   }
 }
