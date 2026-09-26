@@ -35,7 +35,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "knock": "./dist/cli.js"
+    "knock": "dist/cli.js"
   },
   "files": [
     "dist/",

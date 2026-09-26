@@ -1,9 +1,11 @@
 name: Publish to npm
 
-# Publishes via npm Trusted Publishing (OIDC) — no npm token is stored in
-# this repository. npm must be configured to trust this repo + workflow:
-# package Settings -> Trusted Publisher -> GitHub Actions, workflow
-# filename "publish.yml".
+# Stages a release to npm via Trusted Publishing (OIDC) — no npm token is
+# stored in this repository. npm is configured to trust this repo + workflow
+# (package Settings -> Trusted Publisher -> GitHub Actions, "publish.yml"),
+# and the grant is stage-only: after this workflow runs, approve the staged
+# version (2FA) on npmjs.com under the package's "Staged Packages" tab, or
+# with `npm stage approve`.
 on:
   release:
     types: [published]
@@ -24,8 +26,9 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
           cache: npm
-      # Trusted publishing requires npm >= 11.5.1
-      - run: npm install -g npm@latest
+      # Pinned: needs `npm stage` (>= 11.15); npm 12.1.0 mangles this
+      # package's bin entry at pack time.
+      - run: npm install -g npm@11.20.0
       - run: npm ci
-      # prepublishOnly runs typecheck + tests + build before the publish
-      - run: npm publish
+      # prepublishOnly runs typecheck + tests + build before the stage
+      - run: npm stage publish
