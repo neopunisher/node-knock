@@ -1,0 +1,31 @@
+name: Publish to npm
+
+# Publishes via npm Trusted Publishing (OIDC) — no npm token is stored in
+# this repository. npm must be configured to trust this repo + workflow:
+# package Settings -> Trusted Publisher -> GitHub Actions, workflow
+# filename "publish.yml".
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # mint the OIDC token npm exchanges for publish access
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+      # Trusted publishing requires npm >= 11.5.1
+      - run: npm install -g npm@latest
+      - run: npm ci
+      # prepublishOnly runs typecheck + tests + build before the publish
+      - run: npm publish
