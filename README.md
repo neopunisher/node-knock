@@ -7,7 +7,8 @@ Transparency logs** (passive, via [crt.sh](https://crt.sh)) and a bundled
 **31k-entry wordlist** (active DNS brute force), detects wildcard DNS so you
 don't drown in false positives, and verifies everything with real lookups.
 
-Zero runtime dependencies. Great for attack-surface audits, pen-test recon,
+Use it as a CLI, a library, or an **MCP server** for AI agents. Zero
+runtime dependencies. Great for attack-surface audits, pen-test recon,
 or checking what a new client actually has exposed.
 
 [![npm version](https://img.shields.io/npm/v/knock.svg)](https://www.npmjs.com/package/knock)
@@ -18,6 +19,12 @@ or checking what a new client actually has exposed.
 ```bash
 npm install -g knock   # CLI
 npm install knock      # library
+```
+
+Or run the CLI without installing:
+
+```bash
+npx knock example.com
 ```
 
 Requires Node.js >= 22.
@@ -50,6 +57,7 @@ Useful flags:
 | `-w, --web` | probe http/https on each found host |
 | `-j, --json` | full report as JSON |
 | `-q, --quiet` | hostnames only (pipe-friendly) |
+| `--mcp` | run as an MCP server on stdio (see below) |
 
 Found hosts stream to stdout as they resolve; diagnostics go to stderr, so
 `knock -q example.com | sort` does what you'd hope.
@@ -104,6 +112,43 @@ The bundled wordlists are exposed as `wordlists.subs` (~31k labels,
 popularity-ordered) and `wordlists.org`, and helpers `loadWordlist(path)` /
 `parseWordlist(text)` / `normalizeDomain(input)` are exported too. Full
 TypeScript types ship with the package.
+
+## MCP server
+
+knock ships a [Model Context Protocol](https://modelcontextprotocol.io)
+server, so AI agents (Claude Code, Claude Desktop, Cursor, …) can enumerate
+subdomains directly. It runs over stdio:
+
+```bash
+claude mcp add knock -- npx -y knock --mcp
+```
+
+Or in any client's JSON config:
+
+```json
+{
+  "mcpServers": {
+    "knock": { "command": "npx", "args": ["-y", "knock", "--mcp"] }
+  }
+}
+```
+
+| Tool | Does |
+| --- | --- |
+| `knock_enumerate` | full run (CT + brute force, or `passive: true`), returns the report |
+| `knock_ct_lookup` | Certificate Transparency names only — one HTTPS request, no DNS |
+| `knock_registrable_domain` | offline Public Suffix List lookup |
+
+All tools are read-only, return structured JSON, stream progress per found
+host, and honor cancellation. The server is implemented without the MCP SDK,
+so the zero-dependency promise holds.
+
+## AI docs
+
+[`llms.txt`](llms.txt) is a compact, agent-oriented reference to the whole
+API (library, CLI and MCP tools) and ships in the npm package at
+`node_modules/knock/llms.txt`. Contributors' coding agents get repo
+conventions from [`AGENTS.md`](AGENTS.md).
 
 ## How it works
 

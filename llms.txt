@@ -1,0 +1,70 @@
+# knock
+
+> Subdomain enumeration for Node.js (>= 22), as a library, a CLI, and an MCP server. Combines Certificate Transparency logs (passive, via crt.sh) with a wordlist DNS brute force (bundled ~31k labels), detects and filters wildcard DNS, and verifies names with real lookups. ESM-only, TypeScript types included, zero runtime dependencies. Only scan domains you own or are authorized to assess.
+
+Install with `npm install knock` (library) or run `npx knock example.com` (CLI). Targets are reduced to their registrable domain via a bundled Public Suffix List before scanning ("https://a.www.example.co.uk/x" -> "example.co.uk") unless told otherwise.
+
+## Library
+
+```js
+import { knock, certSubdomains } from 'knock';
+
+// Full run: CT + wordlist brute force. Takes ~30-90s with the default wordlist.
+const report = await knock('example.com', {
+  concurrency: 64,               // parallel DNS queries
+  onResult: (r) => console.log(r.name), // streamed as found
+});
+
+// Passive only: CT names, verified over DNS, no brute force.
+await knock('example.com', { words: [] });
+
+// Just the CT names, unverified: one HTTPS request, no DNS.
+const names = await certSubdomains('example.com'); // string[], sorted, apex excluded
+```
+
+`knock(domain, options?)` resolves to a `KnockReport`:
+
+```ts
+{
+  domain: string;                              // the domain actually scanned
+  results: { name: string; addresses: string[]; sources: ('wordlist' | 'ct')[];
+             web?: { https: number | null; http: number | null } }[];
+  wildcard: { detected: boolean; addresses: string[] };
+  ct: { enabled: boolean; names: number; unresolved: string[]; error: string | null };
+  stats: { words: number; candidates: number; queried: number; found: number;
+           errors: number; durationMs: number };
+}
+```
+
+Options (all optional): `words` (string[], overrides `wordlist`; `[]` = passive), `wordlist` (file path; default `wordlists.subs`), `ct` (true), `ctTimeout` (15000), `verify` (true; resolve CT names), `concurrency` (64), `timeout` (5000 ms per DNS query), `tries` (2), `servers` (DNS server IPs), `family` (4 | 6 | 'any'; default 4), `wildcardTests` (3; 0 disables), `web` (false; HEAD http/https on found hosts), `webTimeout` (5000), `baseDomainOnly` (true), `icannOnly` (false; ignore private PSL suffixes like github.io), `signal` (AbortSignal), `onResult` (callback), and test injectables `resolver`, `fetch`, `psl`.
+
+Behavior worth knowing:
+- A CT lookup failure does not reject; it is reported in `report.ct.error` and the run continues with the wordlist.
+- Wordlist hits that only return the wildcard DNS answer are dropped; CT-sourced names are kept even under a wildcard.
+- `report.ct.unresolved` lists CT names that no longer resolve (stale or internal hosts).
+- `knock()` rejects with the abort reason when `signal` aborts, and with a `TypeError` for unusable input.
+
+Other exports: `normalizeDomain(input)`, `parseWordlist(text)`, `loadWordlist(path)`, `wordlists` (`{ subs, org }` absolute paths), `getRegistrableDomain(host, rules, { icannOnly })`, `getPublicSuffix(host, rules, opts)`, `loadPublicSuffixList(path?)`, `parsePublicSuffixList(text)`, `publicSuffixListPath`, and all the types (`KnockOptions`, `KnockReport`, `KnockResult`, ...). Default export is `knock`.
+
+## CLI
+
+```
+knock [options] <domain> [domain ...]
+```
+
+`-p/--passive` (CT only), `--no-ct`, `--no-verify`, `--full-host` (skip registrable-domain reduction), `-l/--list <path|subs|org>`, `-c/--concurrency <n>`, `-t/--timeout <ms>`, `-s/--server <ip>` (repeatable), `-6/--ipv6`, `-w/--web`, `-j/--json` (full report), `-q/--quiet` (hostnames only), `--mcp`. Results go to stdout, diagnostics to stderr; exit code 1 if any domain failed.
+
+## MCP server
+
+`knock --mcp` serves the Model Context Protocol over stdio. Register it with, for example, `claude mcp add knock -- npx -y knock --mcp`, or in a JSON client config: `{"command": "npx", "args": ["-y", "knock", "--mcp"]}`.
+
+Tools (all read-only; results include `structuredContent` plus a JSON text block):
+- `knock_enumerate` — full `knock()` run. Args: `domain` (required), `passive`, `ct`, `verify`, `fullHost`, `wordlist` ("subs" | "org"), `words`, `concurrency`, `timeout`, `servers`, `ipv6`, `web`. Returns the `KnockReport`. Sends progress notifications per found host when the call carries a progress token, and supports cancellation.
+- `knock_ct_lookup` — `certSubdomains()`. Args: `domain`, `timeout`. Returns `{ domain, names }`.
+- `knock_registrable_domain` — offline PSL lookup. Args: `host`, `icannOnly`. Returns `{ host, publicSuffix, registrableDomain }`.
+
+## Links
+
+- [README](https://github.com/neopunisher/node-knock#readme): full documentation
+- [Changelog](https://github.com/neopunisher/node-knock/blob/main/CHANGELOG.md)
+- [npm](https://www.npmjs.com/package/knock)

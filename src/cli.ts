@@ -31,6 +31,7 @@ Options
   -s, --server <ip>           DNS server to use, repeatable
   -6, --ipv6                  also resolve AAAA records
   -w, --web                   probe http/https on found hosts
+      --mcp                   run as an MCP server on stdio (for AI agents)
   -j, --json                  print the full report as JSON
   -q, --quiet                 hostnames only, no summary
   -h, --help                  show this help
@@ -40,6 +41,7 @@ Examples
   knock example.com
   knock --passive --json example.com
   knock -l org -s 1.1.1.1 -c 128 example.com
+  claude mcp add knock -- npx -y knock --mcp
 
 Only scan domains you own or are authorized to assess.`;
 
@@ -63,6 +65,7 @@ function parseCliArgs() {
         server: { type: 'string', short: 's', multiple: true },
         ipv6: { type: 'boolean', short: '6', default: false },
         web: { type: 'boolean', short: 'w', default: false },
+        mcp: { type: 'boolean', default: false },
         json: { type: 'boolean', short: 'j', default: false },
         quiet: { type: 'boolean', short: 'q', default: false },
         help: { type: 'boolean', short: 'h', default: false },
@@ -82,6 +85,11 @@ if (flags.help) {
 }
 if (flags.version) {
   console.log(version);
+  process.exit(0);
+}
+if (flags.mcp) {
+  const { serveMcp } = await import('./mcp.ts');
+  await serveMcp();
   process.exit(0);
 }
 if (domains.length === 0) {

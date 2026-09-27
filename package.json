@@ -1,7 +1,7 @@
 {
   "name": "knock",
-  "version": "1.0.0",
-  "description": "Knock, knock. Who's there? Wordlist-based subdomain enumeration with wildcard DNS detection. Zero dependencies.",
+  "version": "1.1.0",
+  "description": "Knock, knock. Who's there? Subdomain enumeration via Certificate Transparency and wordlist DNS brute force, with wildcard detection. CLI, library and MCP server. Zero dependencies.",
   "keywords": [
     "domain",
     "subdomain",
@@ -12,7 +12,10 @@
     "pentest",
     "security",
     "util",
-    "utility"
+    "utility",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol"
   ],
   "author": "Carter Cole <node@cartercole.com>",
   "license": "MIT",
@@ -39,7 +42,8 @@
   },
   "files": [
     "dist/",
-    "lists/"
+    "lists/",
+    "llms.txt"
   ],
   "engines": {
     "node": ">=22"

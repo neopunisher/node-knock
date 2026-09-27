@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 (2026-09-26)
+
+### Added
+- **MCP server**: `knock --mcp` serves the Model Context Protocol over stdio
+  with `knock_enumerate`, `knock_ct_lookup` and `knock_registrable_domain`
+  tools (structured output, progress notifications, cancellation). Hand-rolled
+  JSON-RPC, so still zero runtime dependencies.
+- `llms.txt`, an agent-oriented API reference shipped in the package, and
+  `AGENTS.md` / `CLAUDE.md` contributor guidance for coding agents.
+
 ## 1.0.0 (2026)
 
 Complete modernization — a rewrite of the 2014-era `0.1.0`.
